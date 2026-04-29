@@ -11,6 +11,7 @@ export const useSensorData = () => {
 
   const [history, setHistory] = useState([]);
   const [alerts, setAlerts] = useState([]);
+  const [curtainOpen, setCurtainOpen] = useState(true);
   const [thresholds, setThresholds] = useState({
     temperature: { min: 10, max: 35 },
     humidity: { min: 30, max: 80 },
@@ -100,5 +101,13 @@ export const useSensorData = () => {
     }
   };
 
-  return { currentData, history, alerts, thresholds, setThresholds };
+  const dismissAlert = (id) => {
+    setAlerts(prev => prev.filter(alert => alert.id !== id));
+  };
+
+  const toggleCurtain = () => {
+    setCurtainOpen(prev => !prev);
+  };
+
+  return { currentData, history, alerts, thresholds, setThresholds, curtainOpen, toggleCurtain, dismissAlert };
 };

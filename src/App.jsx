@@ -5,20 +5,27 @@ import { Header } from './components/Header';
 import { useSensorData } from './hooks/useSensorData';
 
 // Import Pages
-import { Home } from './pages/Home';
+import { Dashboard } from './pages/Dashboard';
 import { Alarms } from './pages/Alarms';
 import { Settings } from './pages/Settings';
 import { Placeholder } from './pages/Placeholder';
 
 function App() {
-  const { currentData, history, alerts, thresholds, setThresholds } = useSensorData();
-  const [activeTab, setActiveTab] = useState('home');
+  const { currentData, history, alerts, thresholds, setThresholds, curtainOpen, toggleCurtain, dismissAlert } = useSensorData();
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'home':
       case 'dashboard':
-        return <Home currentData={currentData} history={history} alerts={alerts} thresholds={thresholds} />;
+        return <Dashboard 
+          currentData={currentData} 
+          history={history} 
+          alerts={alerts} 
+          thresholds={thresholds} 
+          curtainOpen={curtainOpen}
+          toggleCurtain={toggleCurtain}
+          dismissAlert={dismissAlert}
+        />;
       case 'alarms':
         return <Alarms alerts={alerts} />;
       case 'settings':
@@ -32,21 +39,28 @@ function App() {
       case 'security':
         return <Placeholder title="Security Settings" />;
       default:
-        return <Home currentData={currentData} history={history} alerts={alerts} thresholds={thresholds} />;
+        return <Dashboard 
+          currentData={currentData} 
+          history={history} 
+          alerts={alerts} 
+          thresholds={thresholds} 
+          curtainOpen={curtainOpen}
+          toggleCurtain={toggleCurtain}
+          dismissAlert={dismissAlert}
+        />;
     }
   };
 
   const getPageTitle = () => {
     switch (activeTab) {
-      case 'home': return 'Home Dashboard';
+      case 'dashboard': return 'Dashboard';
       case 'alarms': return 'Alarms & Warnings';
-      case 'dashboard': return 'Extended Dashboard';
       case 'entities': return 'Entities';
       case 'customers': return 'Customers';
       case 'profiles': return 'Profiles';
       case 'settings': return 'System Settings';
       case 'security': return 'Security';
-      default: return 'Home Dashboard';
+      default: return 'Dashboard';
     }
   };
 

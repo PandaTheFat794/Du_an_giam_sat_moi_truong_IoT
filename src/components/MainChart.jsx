@@ -28,6 +28,10 @@ export const MainChart = ({ data }) => {
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
             <Tooltip 
               contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: 'var(--shadow-md)' }}
+              formatter={(value, name) => [
+                value + (name === 'temperature' ? ' °C' : name === 'humidity' ? ' %' : ' lux'),
+                name === 'temperature' ? 'Temperature' : name === 'humidity' ? 'Humidity' : 'Light'
+              ]}
             />
             <Area type="monotone" dataKey="temperature" stroke="#f59e0b" fillOpacity={1} fill="url(#colorTemp)" />
             <Area type="monotone" dataKey="humidity" stroke="#3b82f6" fillOpacity={1} fill="url(#colorHum)" />

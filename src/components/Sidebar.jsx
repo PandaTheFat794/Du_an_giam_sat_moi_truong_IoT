@@ -1,10 +1,9 @@
-import { Activity, Bell, Grid, Home, Users, Settings, Shield, Box, LayoutTemplate } from 'lucide-react';
+import { Activity, Bell, Grid, Users, Settings, Shield, Box, LayoutTemplate } from 'lucide-react';
 
 export const Sidebar = ({ activeTab, setActiveTab }) => {
   const menuItems = [
-    { id: 'home', label: 'Home', icon: <Home size={20} /> },
-    { id: 'alarms', label: 'Alarms', icon: <Bell size={20} /> },
     { id: 'dashboard', label: 'Dashboard', icon: <Grid size={20} /> },
+    { id: 'alarms', label: 'Alarms', icon: <Bell size={20} /> },
     { id: 'entities', label: 'Entities', icon: <Box size={20} /> },
     { id: 'customers', label: 'Customers', icon: <Users size={20} /> },
     { id: 'profiles', label: 'Profiles', icon: <LayoutTemplate size={20} /> },
