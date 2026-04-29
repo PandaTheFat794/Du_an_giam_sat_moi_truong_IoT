@@ -1,23 +1,22 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-  --bg-main: #f4f6fa;
-  --bg-sidebar: #ffffff;
+  --bg-main: #eef6f2;
+  --bg-sidebar: #0f2f2b;
   --bg-card: #ffffff;
-  --text-primary: #1a1b25;
-  --text-secondary: #7f869a;
-  
-  --primary-color: #6366f1; /* Purple/Indigo */
-  --secondary-color: #f59e0b; /* Amber/Orange */
-  --tertiary-color: #3b82f6; /* Blue */
-  --danger-color: #ef4444; /* Red for alerts */
-  
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
-  --border-radius: 16px;
+  --text-primary: #14211f;
+  --text-secondary: #6b7b77;
+  --primary-color: #16845f;
+  --secondary-color: #f59e0b;
+  --tertiary-color: #2563eb;
+  --danger-color: #ef4444;
+  --border-color: #dce8e3;
+  --shadow-sm: 0 10px 24px rgba(15, 47, 43, 0.06);
+  --shadow-md: 0 16px 40px rgba(15, 47, 43, 0.1);
+  --shadow-lg: 0 22px 50px rgba(15, 47, 43, 0.14);
+  --border-radius: 14px;
   --border-radius-sm: 8px;
-  --transition: all 0.3s ease;
+  --transition: all 0.2s ease;
 }
 
 * {
@@ -28,14 +27,21 @@
 
 body {
   font-family: 'Inter', sans-serif;
-  background-color: var(--bg-main);
+  background:
+    radial-gradient(circle at top left, rgba(22, 132, 95, 0.14), transparent 28rem),
+    linear-gradient(135deg, #eef6f2 0%, #f7faf8 52%, #eef4ff 100%);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-weight: 600;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 700;
   margin: 0;
 }
 
@@ -50,7 +56,8 @@ button {
   font-family: inherit;
 }
 
-ul, ol {
+ul,
+ol {
   list-style: none;
 }
 
@@ -59,9 +66,9 @@ a {
   color: inherit;
 }
 
-/* Card utility */
 .card {
   background-color: var(--bg-card);
+  border: 1px solid rgba(220, 232, 227, 0.9);
   border-radius: var(--border-radius);
   padding: 24px;
   box-shadow: var(--shadow-sm);

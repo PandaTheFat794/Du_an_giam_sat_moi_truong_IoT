@@ -11,7 +11,7 @@ export const Placeholder = ({ title }) => {
       </div>
       <h2 style={{ fontSize: '24px', marginBottom: '12px' }}>{title}</h2>
       <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', textAlign: 'center' }}>
-        Mô-đun này đang trong quá trình phát triển để kết nối với cơ sở dữ liệu thực. Vui lòng quay lại sau!
+        Mô-đun này đang trong quá trình phát triển để kết nối với cơ sở dữ liệu thực.
       </p>
     </div>
   );

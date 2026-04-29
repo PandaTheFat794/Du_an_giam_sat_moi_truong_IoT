@@ -3,7 +3,7 @@ import { AlertTriangle } from 'lucide-react';
 
 export const SensorCard = ({ title, value, unit, dataKey, data, color, isWarning }) => {
   return (
-    <div className="card sensor-card">
+    <div className="card sensor-card" style={{ '--sensor-color': color }}>
       <div className="sensor-card-header">
         <div className="sensor-title">
           <span className={`status-dot ${isWarning ? 'inactive' : 'active'}`}></span>

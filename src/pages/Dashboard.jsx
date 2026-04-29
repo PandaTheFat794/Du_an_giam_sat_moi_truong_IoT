@@ -1,18 +1,64 @@
 import { SensorCard } from '../components/SensorCard';
 import { MainChart } from '../components/MainChart';
 import { AlertSystem } from '../components/AlertSystem';
+import { HistoryTable } from '../components/HistoryTable';
 
-export const Dashboard = ({ currentData, history, alerts, thresholds, curtainOpen, toggleCurtain, dismissAlert }) => {
-  // Logic Cảnh báo cho màu sắc Card
+export const Dashboard = ({
+  currentData,
+  history,
+  alerts,
+  thresholds,
+  dismissAlert,
+  alertsEnabled,
+  toggleAlertsEnabled,
+  apiError,
+  isLoading,
+  deviceStatus,
+  historyFilter,
+  setHistoryFilter,
+  appliedHistoryFilter,
+  applyHistoryFilter,
+  clearHistoryFilter,
+}) => {
   const tempWarning = currentData.temperature > thresholds.temperature.max || currentData.temperature < thresholds.temperature.min;
   const humWarning = currentData.humidity > thresholds.humidity.max || currentData.humidity < thresholds.humidity.min;
   const lightWarning = currentData.light > thresholds.light.max || currentData.light < thresholds.light.min;
+  const isDeviceOnline = deviceStatus?.status === 'online';
+  const lastSeenText = deviceStatus?.last_seen
+    ? new Date(deviceStatus.last_seen).toLocaleString()
+    : 'Chưa có dữ liệu';
 
   return (
     <div className="dashboard-grid">
+      {apiError && (
+        <div className="api-status warning">
+          {apiError}. Kiểm tra backend tại cổng 3001 và kết nối PostgreSQL.
+        </div>
+      )}
+
+      {isLoading && (
+        <div className="api-status">
+          Đang tải dữ liệu từ hệ thống IoT...
+        </div>
+      )}
+
+      <div className="device-status-panel card">
+        <div className="device-status-main">
+          <span className={`status-dot ${isDeviceOnline ? 'active' : 'inactive'}`} />
+          <div>
+            <div className="device-status-title">ESP32 nhà kính</div>
+            <div className="device-status-meta">Device ID: esp32_01</div>
+          </div>
+        </div>
+        <span className={`device-status-badge ${isDeviceOnline ? 'online' : 'offline'}`}>
+          {isDeviceOnline ? 'Online' : 'Offline'}
+        </span>
+        <div className="device-status-meta">Lần gửi dữ liệu gần nhất: {lastSeenText}</div>
+      </div>
+
       <div className="sensor-card-container">
         <SensorCard
-          title="Temperature"
+          title="Nhiệt độ"
           value={currentData.temperature}
           unit="°C"
           dataKey="temperature"
@@ -24,7 +70,7 @@ export const Dashboard = ({ currentData, history, alerts, thresholds, curtainOpe
 
       <div className="sensor-card-container">
         <SensorCard
-          title="Humidity"
+          title="Độ ẩm"
           value={currentData.humidity}
           unit="%"
           dataKey="humidity"
@@ -36,7 +82,7 @@ export const Dashboard = ({ currentData, history, alerts, thresholds, curtainOpe
 
       <div className="sensor-card-container">
         <SensorCard
-          title="Light"
+          title="Ánh sáng"
           value={currentData.light}
           unit="lux"
           dataKey="light"
@@ -46,21 +92,23 @@ export const Dashboard = ({ currentData, history, alerts, thresholds, curtainOpe
         />
       </div>
 
-      <div className="sensor-card-container">
-        <div className="card sensor-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%', cursor: 'pointer' }} onClick={toggleCurtain}>
-          <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px', color: 'var(--text-secondary)' }}>Trạng thái Rèm</div>
-          <div style={{ fontSize: '24px', fontWeight: '600', color: curtainOpen ? '#3b82f6' : '#64748b' }}>
-            {curtainOpen ? 'ĐANG MỞ' : 'ĐANG ĐÓNG'}
-          </div>
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '8px', opacity: 0.7 }}>
-            (Nhấn để đổi trạng thái)
-          </div>
-        </div>
-      </div>
-
       <MainChart data={history} />
 
-      <AlertSystem alerts={alerts.slice(0, 5)} dismissAlert={dismissAlert} />
+      <AlertSystem
+        alerts={alerts.slice(0, 5)}
+        dismissAlert={dismissAlert}
+        alertsEnabled={alertsEnabled}
+        toggleAlertsEnabled={toggleAlertsEnabled}
+      />
+
+      <HistoryTable
+        data={history}
+        historyFilter={historyFilter}
+        setHistoryFilter={setHistoryFilter}
+        appliedHistoryFilter={appliedHistoryFilter}
+        applyHistoryFilter={applyHistoryFilter}
+        clearHistoryFilter={clearHistoryFilter}
+      />
     </div>
   );
 };

@@ -11,7 +11,24 @@ import { Settings } from './pages/Settings';
 import { Placeholder } from './pages/Placeholder';
 
 function App() {
-  const { currentData, history, alerts, thresholds, setThresholds, curtainOpen, toggleCurtain, dismissAlert } = useSensorData();
+  const {
+    currentData,
+    history,
+    alerts,
+    thresholds,
+    setThresholds,
+    dismissAlert,
+    alertsEnabled,
+    toggleAlertsEnabled,
+    apiError,
+    isLoading,
+    deviceStatus,
+    historyFilter,
+    setHistoryFilter,
+    appliedHistoryFilter,
+    applyHistoryFilter,
+    clearHistoryFilter,
+  } = useSensorData();
   const [activeTab, setActiveTab] = useState('dashboard');
 
   const renderContent = () => {
@@ -22,20 +39,22 @@ function App() {
           history={history} 
           alerts={alerts} 
           thresholds={thresholds} 
-          curtainOpen={curtainOpen}
-          toggleCurtain={toggleCurtain}
           dismissAlert={dismissAlert}
+          alertsEnabled={alertsEnabled}
+          toggleAlertsEnabled={toggleAlertsEnabled}
+          apiError={apiError}
+          isLoading={isLoading}
+          deviceStatus={deviceStatus}
+          historyFilter={historyFilter}
+          setHistoryFilter={setHistoryFilter}
+          appliedHistoryFilter={appliedHistoryFilter}
+          applyHistoryFilter={applyHistoryFilter}
+          clearHistoryFilter={clearHistoryFilter}
         />;
       case 'alarms':
         return <Alarms alerts={alerts} />;
       case 'settings':
         return <Settings thresholds={thresholds} setThresholds={setThresholds} />;
-      case 'entities':
-        return <Placeholder title="Entities Management" />;
-      case 'customers':
-        return <Placeholder title="Customers" />;
-      case 'profiles':
-        return <Placeholder title="Profiles" />;
       case 'security':
         return <Placeholder title="Security Settings" />;
       default:
@@ -44,9 +63,17 @@ function App() {
           history={history} 
           alerts={alerts} 
           thresholds={thresholds} 
-          curtainOpen={curtainOpen}
-          toggleCurtain={toggleCurtain}
           dismissAlert={dismissAlert}
+          alertsEnabled={alertsEnabled}
+          toggleAlertsEnabled={toggleAlertsEnabled}
+          apiError={apiError}
+          isLoading={isLoading}
+          deviceStatus={deviceStatus}
+          historyFilter={historyFilter}
+          setHistoryFilter={setHistoryFilter}
+          appliedHistoryFilter={appliedHistoryFilter}
+          applyHistoryFilter={applyHistoryFilter}
+          clearHistoryFilter={clearHistoryFilter}
         />;
     }
   };
@@ -55,9 +82,6 @@ function App() {
     switch (activeTab) {
       case 'dashboard': return 'Dashboard';
       case 'alarms': return 'Alarms & Warnings';
-      case 'entities': return 'Entities';
-      case 'customers': return 'Customers';
-      case 'profiles': return 'Profiles';
       case 'settings': return 'System Settings';
       case 'security': return 'Security';
       default: return 'Dashboard';

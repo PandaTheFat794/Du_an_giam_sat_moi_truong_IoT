@@ -11,6 +11,9 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+server/.env
+firmware/esp32_greenhouse/config.h
 
 # Editor directories and files
 .vscode/*

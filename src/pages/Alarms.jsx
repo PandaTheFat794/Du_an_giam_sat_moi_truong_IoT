@@ -3,11 +3,11 @@ import { AlertCircle, AlertTriangle } from 'lucide-react';
 export const Alarms = ({ alerts }) => {
   return (
     <div className="card" style={{ height: 'calc(100vh - 120px)', overflowY: 'auto' }}>
-      <h2 style={{ marginBottom: '24px', fontSize: '20px' }}>Lịch sử Cảnh báo</h2>
+      <h2 style={{ marginBottom: '24px', fontSize: '20px' }}>Lịch sử cảnh báo</h2>
 
       {alerts.length === 0 ? (
         <div style={{ color: 'var(--text-secondary)', textAlign: 'center', marginTop: '40px' }}>
-          Tuyệt vời! Không có cảnh báo nào trong lịch sử.
+          Không có cảnh báo nào trong lịch sử.
         </div>
       ) : (
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -21,7 +21,7 @@ export const Alarms = ({ alerts }) => {
             </tr>
           </thead>
           <tbody>
-            {alerts.map(alert => (
+            {alerts.map((alert) => (
               <tr key={alert.id} style={{ borderBottom: '1px solid #f8f8f8' }}>
                 <td style={{ padding: '12px', fontWeight: '500' }}>{alert.time}</td>
                 <td style={{ padding: '12px', color: 'var(--text-secondary)' }}>{alert.date}</td>
@@ -30,7 +30,7 @@ export const Alarms = ({ alerts }) => {
                     padding: '4px 8px',
                     borderRadius: '4px',
                     backgroundColor: '#f1f5f9',
-                    fontSize: '13px'
+                    fontSize: '13px',
                   }}>
                     {alert.sensor}
                   </span>
