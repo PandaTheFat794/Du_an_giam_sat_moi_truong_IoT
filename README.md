@@ -224,7 +224,7 @@ curl -X POST http://localhost:3001/api/readings ^
   -d "{\"device_id\":\"esp32_01\",\"temperature\":28.5,\"humidity\":72,\"light\":430}"
 ```
 
-## 👤 Nhóm
+## 👤 Thành viên
 
 - **Tạ Minh Quân**
 - **Nguyễn Thị Kim Cúc**
