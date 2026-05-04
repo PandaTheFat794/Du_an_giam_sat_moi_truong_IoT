@@ -224,7 +224,8 @@ curl -X POST http://localhost:3001/api/readings ^
   -d "{\"device_id\":\"esp32_01\",\"temperature\":28.5,\"humidity\":72,\"light\":430}"
 ```
 
-## 👤 Tác giả
+## 👤 Nhóm
 
 - **Tạ Minh Quân**
-- Email: taminhquan792004@gmail.com
+- **Nguyễn Thị Kim Cúc**
+- **Trần Thị Phương**
