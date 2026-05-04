@@ -1,0 +1,22 @@
+#pragma once
+
+/**
+ * FILE HƯỚNG DẪN CẤU HÌNH (TEMPLATE)
+ * 
+ * Cách dùng:
+ * 1. Copy file này và đổi tên thành 'config.h' cùng thư mục.
+ * 2. Thay đổi các thông tin bên dưới cho phù hợp với mạng WiFi và địa chỉ Server của bạn.
+ * 3. File 'config.h' đã được chặn bởi .gitignore để tránh lộ mật khẩu lên GitHub.
+ */
+
+const char* WIFI_SSID = "YOUR_WIFI_SSID";
+const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+
+const char* DEVICE_ID = "esp32_01";
+
+// Khi chạy Local: "http://192.168.1.x:3001" (IPv4 của máy chạy server)
+// Khi Deploy: "https://your-app-name.render.com"
+const char* API_BASE_URL = "http://YOUR_SERVER_IP:3001";
+
+// Phải khớp với IOT_API_KEY trong file .env của Server
+const char* IOT_API_KEY = "YOUR_SECRET_API_KEY";

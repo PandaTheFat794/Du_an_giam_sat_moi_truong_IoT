@@ -57,8 +57,11 @@ const buildHistoryUrl = (historyFilter) => {
 };
 
 export const useSensorData = () => {
+  const token = localStorage.getItem('token');
+
   const [currentData, setCurrentData] = useState(emptyData);
   const [history, setHistory] = useState([]);
+  const [stats, setStats] = useState({ today: null, week: null });
   const [alerts, setAlerts] = useState([]);
   const [alertsEnabled, setAlertsEnabled] = useState(true);
   const [apiError, setApiError] = useState('');
@@ -196,11 +199,17 @@ export const useSensorData = () => {
 
   const fetchSensorData = useCallback(async () => {
     try {
-      const [latestResponse, historyResponse, devicesResponse] = await Promise.all([
-        fetch(`${API_URL}/api/readings/latest?device_id=${DEVICE_ID}`),
-        fetch(buildHistoryUrl(appliedHistoryFilter)),
-        fetch(`${API_URL}/api/devices`),
+      const headers = {
+        'Authorization': `Bearer ${token}`
+      };
+
+      const [latestResponse, historyResponse, devicesResponse, statsResponse] = await Promise.all([
+        fetch(`${API_URL}/api/readings/latest?device_id=${DEVICE_ID}`, { headers }),
+        fetch(buildHistoryUrl(appliedHistoryFilter), { headers }),
+        fetch(`${API_URL}/api/devices`, { headers }),
+        fetch(`${API_URL}/api/readings/stats?device_id=${DEVICE_ID}`, { headers }),
       ]);
+
 
       if (!latestResponse.ok || !historyResponse.ok || !devicesResponse.ok) {
         throw new Error('Không thể lấy dữ liệu từ backend');
@@ -209,11 +218,14 @@ export const useSensorData = () => {
       const latestJson = await latestResponse.json();
       const historyJson = await historyResponse.json();
       const devicesJson = await devicesResponse.json();
+      const statsJson = await statsResponse.ok ? await statsResponse.json() : { data: { today: null, week: null } };
+      
       const latest = formatReading(latestJson.data);
       const formattedHistory = Array.isArray(historyJson.data) ? historyJson.data.map(formatReading) : [];
       const currentDevice = Array.isArray(devicesJson.data)
         ? devicesJson.data.find((device) => device.device_code === DEVICE_ID)
         : null;
+
 
       if (latest) {
         setCurrentData(latest);
@@ -225,6 +237,10 @@ export const useSensorData = () => {
           status: currentDevice.status,
           last_seen: currentDevice.last_seen,
         });
+      }
+
+      if (statsJson.data) {
+        setStats(statsJson.data);
       }
 
       setHistory(formattedHistory);
@@ -282,6 +298,7 @@ export const useSensorData = () => {
   return {
     currentData,
     history,
+    stats,
     alerts,
     thresholds,
     setThresholds,

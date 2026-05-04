@@ -2,10 +2,12 @@ import { SensorCard } from '../components/SensorCard';
 import { MainChart } from '../components/MainChart';
 import { AlertSystem } from '../components/AlertSystem';
 import { HistoryTable } from '../components/HistoryTable';
+import { StatisticsPanel } from '../components/StatisticsPanel';
 
 export const Dashboard = ({
   currentData,
   history,
+  stats,
   alerts,
   thresholds,
   dismissAlert,
@@ -55,6 +57,8 @@ export const Dashboard = ({
         </span>
         <div className="device-status-meta">Lần gửi dữ liệu gần nhất: {lastSeenText}</div>
       </div>
+
+      <StatisticsPanel stats={stats} />
 
       <div className="sensor-card-container">
         <SensorCard

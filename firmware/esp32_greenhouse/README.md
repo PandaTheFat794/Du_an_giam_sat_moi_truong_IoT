@@ -35,4 +35,3 @@ const char* IOT_API_KEY = "YOUR_API_KEY";
 
 `API_BASE_URL` phải là IPv4 của máy đang chạy backend, không dùng `localhost` vì `localhost` trên ESP32 là chính ESP32.
 
-File `config.h` đã được đưa vào `.gitignore`, vì vậy không nên đưa file này lên GitHub.

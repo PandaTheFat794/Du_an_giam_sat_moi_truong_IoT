@@ -34,3 +34,13 @@ ON alerts (device_id, triggered_at DESC);
 
 CREATE INDEX IF NOT EXISTS idx_alerts_unresolved
 ON alerts (is_resolved, triggered_at DESC);
+
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(50) UNIQUE NOT NULL,
+  email VARCHAR(100) UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  full_name VARCHAR(100),
+  role VARCHAR(20) DEFAULT 'user',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

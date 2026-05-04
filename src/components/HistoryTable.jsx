@@ -16,6 +16,32 @@ export const HistoryTable = ({
     }));
   };
 
+  const handleExportCSV = () => {
+    if (rows.length === 0) return;
+
+    const headers = ['Ngày', 'Thời gian', 'Nhiệt độ (°C)', 'Độ ẩm (%)', 'Ánh sáng (lux)'];
+    
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(item => [
+        item.date,
+        item.time,
+        item.temperature,
+        item.humidity,
+        item.light
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `lich_su_iot_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="card history-table-container">
       <div className="history-header">
@@ -49,8 +75,12 @@ export const HistoryTable = ({
           <button className="filter-button" onClick={clearHistoryFilter}>
             Xóa lọc
           </button>
+          <button className="filter-button" onClick={handleExportCSV} style={{ backgroundColor: '#10b981', color: 'white', borderColor: '#10b981' }}>
+            Xuất CSV
+          </button>
         </div>
       </div>
+
 
       {rows.length === 0 ? (
         <div className="empty-table-message">Không có dữ liệu cảm biến trong khoảng thời gian này.</div>

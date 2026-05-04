@@ -2,6 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { query } from './db.js';
+import * as authController from './controllers/authController.js';
+import { authenticateToken } from './middleware/authMiddleware.js';
+
 
 dotenv.config();
 
@@ -146,6 +149,12 @@ app.get('/api/health', async (_req, res) => {
   }
 });
 
+// Auth Routes
+app.post('/api/auth/register', authController.register);
+app.post('/api/auth/login', authController.login);
+app.get('/api/auth/me', authenticateToken, authController.getMe);
+
+
 app.post('/api/readings', requireApiKey, async (req, res) => {
   const deviceId = String(req.body.device_id || '').trim();
   const temperature = toNumber(req.body.temperature);
@@ -191,7 +200,8 @@ app.post('/api/readings', requireApiKey, async (req, res) => {
   }
 });
 
-app.get('/api/devices', async (_req, res) => {
+app.get('/api/devices', authenticateToken, async (_req, res) => {
+
   try {
     const result = await query(
       `SELECT
@@ -215,7 +225,8 @@ app.get('/api/devices', async (_req, res) => {
   }
 });
 
-app.get('/api/devices/:deviceId/latest', async (req, res) => {
+app.get('/api/devices/:deviceId/latest', authenticateToken, async (req, res) => {
+
   const deviceId = String(req.params.deviceId).trim();
 
   try {
@@ -233,7 +244,8 @@ app.get('/api/devices/:deviceId/latest', async (req, res) => {
   }
 });
 
-app.get('/api/devices/:deviceId/history', async (req, res) => {
+app.get('/api/devices/:deviceId/history', authenticateToken, async (req, res) => {
+
   const deviceId = String(req.params.deviceId).trim();
   const limit = Math.min(Math.max(Number(req.query.limit || 20), 1), 200);
   const { from, to } = req.query;
@@ -248,7 +260,8 @@ app.get('/api/devices/:deviceId/history', async (req, res) => {
   }
 });
 
-app.get('/api/alerts/unresolved', async (req, res) => {
+app.get('/api/alerts/unresolved', authenticateToken, async (req, res) => {
+
   const deviceId = String(req.query.device_id || defaultDeviceId).trim();
 
   try {
@@ -266,7 +279,8 @@ app.get('/api/alerts/unresolved', async (req, res) => {
   }
 });
 
-app.get('/api/readings/latest', async (req, res) => {
+app.get('/api/readings/latest', authenticateToken, async (req, res) => {
+
   const deviceId = String(req.query.device_id || defaultDeviceId).trim();
 
   try {
@@ -284,7 +298,8 @@ app.get('/api/readings/latest', async (req, res) => {
   }
 });
 
-app.get('/api/readings/history', async (req, res) => {
+app.get('/api/readings/history', authenticateToken, async (req, res) => {
+
   const deviceId = String(req.query.device_id || defaultDeviceId).trim();
   const limit = Math.min(Math.max(Number(req.query.limit || 20), 1), 200);
   const { from, to } = req.query;
@@ -294,6 +309,42 @@ app.get('/api/readings/history', async (req, res) => {
     const result = await query(historyQuery.text, historyQuery.params);
 
     return res.json({ success: true, data: result.rows.map(mapReading) });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.get('/api/readings/stats', authenticateToken, async (req, res) => {
+  const deviceId = String(req.query.device_id || defaultDeviceId).trim();
+
+  try {
+    const statsQuery = (timeCondition) => `
+      SELECT
+        COALESCE(ROUND(AVG(temperature)::numeric, 1), 0) as avg_temp,
+        COALESCE(MIN(temperature), 0) as min_temp,
+        COALESCE(MAX(temperature), 0) as max_temp,
+        COALESCE(ROUND(AVG(humidity)::numeric, 1), 0) as avg_hum,
+        COALESCE(MIN(humidity), 0) as min_hum,
+        COALESCE(MAX(humidity), 0) as max_hum,
+        COALESCE(ROUND(AVG(light)::numeric, 1), 0) as avg_light,
+        COALESCE(MIN(light), 0) as min_light,
+        COALESCE(MAX(light), 0) as max_light
+      FROM sensor_readings
+      WHERE device_id = $1 AND ${timeCondition}
+    `;
+
+    const [todayResult, weekResult] = await Promise.all([
+      query(statsQuery("created_at >= CURRENT_DATE"), [deviceId]),
+      query(statsQuery("created_at >= CURRENT_DATE - INTERVAL '7 days'"), [deviceId])
+    ]);
+
+    return res.json({
+      success: true,
+      data: {
+        today: todayResult.rows[0],
+        week: weekResult.rows[0]
+      }
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }

@@ -1,11 +1,10 @@
-import { Activity, Bell, Grid, Settings, Shield } from 'lucide-react';
+import { Activity, Bell, Grid, Settings, Shield, LogOut, User } from 'lucide-react';
 
-export const Sidebar = ({ activeTab, setActiveTab }) => {
+export const Sidebar = ({ activeTab, setActiveTab, onLogout, user }) => {
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: <Grid size={20} /> },
-    { id: 'alarms', label: 'Alarms', icon: <Bell size={20} /> },
-    { id: 'settings', label: 'Settings', icon: <Settings size={20} /> },
-    { id: 'security', label: 'Security', icon: <Shield size={20} /> },
+    { id: 'dashboard', label: 'Tổng quan', icon: <Grid size={20} /> },
+    { id: 'alarms', label: 'Cảnh báo', icon: <Bell size={20} /> },
+    { id: 'settings', label: 'Cấu hình', icon: <Settings size={20} /> },
   ];
 
   return (
@@ -14,7 +13,7 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
         <div className="logo-icon">
           <Activity size={24} />
         </div>
-        <span>Greenhouse IoT</span>
+        <span>SmartGarden IoT</span>
       </div>
 
       <div className="nav-menu">
@@ -29,6 +28,25 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
           </div>
         ))}
       </div>
+
+      {user && (
+        <div className="sidebar-footer">
+          <div className="user-profile">
+            <div className="user-avatar">
+              <User size={18} />
+            </div>
+            <div className="user-info">
+              <span className="user-name">{user.full_name || user.username}</span>
+              <span className="user-role">{user.role}</span>
+            </div>
+          </div>
+          <button className="logout-button" onClick={onLogout}>
+            <LogOut size={18} />
+            <span>Đăng xuất</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };
+

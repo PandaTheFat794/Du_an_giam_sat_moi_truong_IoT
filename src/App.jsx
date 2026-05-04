@@ -3,17 +3,21 @@ import './App.css';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { useSensorData } from './hooks/useSensorData';
+import { AuthProvider, useAuth } from './context/AuthContext';
 
 // Import Pages
 import { Dashboard } from './pages/Dashboard';
 import { Alarms } from './pages/Alarms';
 import { Settings } from './pages/Settings';
 import { Placeholder } from './pages/Placeholder';
+import { LoginPage } from './pages/LoginPage';
 
-function App() {
+function AppContent() {
+  const { user, isAuthenticated, loading, logout } = useAuth();
   const {
     currentData,
     history,
+    stats,
     alerts,
     thresholds,
     setThresholds,
@@ -29,7 +33,21 @@ function App() {
     applyHistoryFilter,
     clearHistoryFilter,
   } = useSensorData();
+  
   const [activeTab, setActiveTab] = useState('dashboard');
+
+  if (loading) {
+    return (
+      <div className="loading-screen">
+        <div className="loader"></div>
+        <p>Đang tải hệ thống...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
 
   const renderContent = () => {
     switch (activeTab) {
@@ -37,6 +55,7 @@ function App() {
         return <Dashboard 
           currentData={currentData} 
           history={history} 
+          stats={stats}
           alerts={alerts} 
           thresholds={thresholds} 
           dismissAlert={dismissAlert}
@@ -55,12 +74,11 @@ function App() {
         return <Alarms alerts={alerts} />;
       case 'settings':
         return <Settings thresholds={thresholds} setThresholds={setThresholds} />;
-      case 'security':
-        return <Placeholder title="Security Settings" />;
       default:
         return <Dashboard 
           currentData={currentData} 
           history={history} 
+          stats={stats}
           alerts={alerts} 
           thresholds={thresholds} 
           dismissAlert={dismissAlert}
@@ -80,23 +98,31 @@ function App() {
 
   const getPageTitle = () => {
     switch (activeTab) {
-      case 'dashboard': return 'Dashboard';
-      case 'alarms': return 'Alarms & Warnings';
-      case 'settings': return 'System Settings';
-      case 'security': return 'Security';
-      default: return 'Dashboard';
+      case 'dashboard': return 'Bảng điều khiển';
+      case 'alarms': return 'Trung tâm Cảnh báo';
+      case 'settings': return 'Cấu hình hệ thống';
+      default: return 'Bảng điều khiển';
     }
   };
 
   return (
     <div className="app-container">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={logout} user={user} />
       <div className="main-content">
-        <Header title={getPageTitle()} />
+        <Header title={getPageTitle()} user={user} />
         {renderContent()}
       </div>
     </div>
   );
 }
 
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+}
+
 export default App;
+

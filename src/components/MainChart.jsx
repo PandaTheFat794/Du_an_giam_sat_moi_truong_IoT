@@ -30,7 +30,7 @@ export const MainChart = ({ data }) => {
               contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: 'var(--shadow-md)' }}
               formatter={(value, name) => [
                 value + (name === 'temperature' ? ' °C' : name === 'humidity' ? ' %' : ' lux'),
-                name === 'temperature' ? 'Temperature' : name === 'humidity' ? 'Humidity' : 'Light',
+                name === 'temperature' ? 'Nhiệt độ' : name === 'humidity' ? 'Độ ẩm' : 'Ánh sáng',
               ]}
             />
             <Area type="monotone" dataKey="temperature" stroke="#f59e0b" fillOpacity={1} fill="url(#colorTemp)" />

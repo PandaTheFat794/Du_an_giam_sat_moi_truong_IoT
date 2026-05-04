@@ -1,69 +1,157 @@
-# Greenhouse IoT Dashboard
+# 🌿 SmartGarden IoT Dashboard
 
-Dashboard giám sát môi trường cho mô hình cây cà chua trong nhà kính.
+Hệ thống giám sát môi trường thông minh cho mô hình nhà kính cây cà chua, sử dụng ESP32 kết hợp cảm biến và dashboard web thời gian thực.
 
-Thiết bị sử dụng:
+## 📐 Kiến trúc hệ thống
 
-- ESP32
-- DHT11: đo nhiệt độ và độ ẩm
-- BH1750: đo cường độ ánh sáng
-
-Kiến trúc:
-
-```text
-ESP32 + DHT11 + BH1750 -> Express API -> PostgreSQL -> React Dashboard
+```
+┌─────────────────┐     HTTP POST      ┌──────────────┐     SQL      ┌────────────┐
+│   ESP32 + DHT11 │ ──────────────────► │  Express.js  │ ───────────► │ PostgreSQL │
+│   + BH1750      │    (API Key)        │  REST API    │              │  Database  │
+└─────────────────┘                     └──────┬───────┘              └──────┬─────┘
+                                               │                            │
+                                               │  JWT Auth                  │  Query
+                                               ▼                            ▼
+                                        ┌──────────────┐          ┌──────────────┐
+                                        │  React SPA   │ ◄────────│  API Server  │
+                                        │  Dashboard   │          │  Port 3001   │
+                                        │  Port 5173   │          └──────────────┘
+                                        └──────────────┘
 ```
 
-## 1. Chạy PostgreSQL
+## 🔧 Phần cứng sử dụng
 
-Tạo database:
+| Thiết bị            | Chức năng            | Giao tiếp              |
+| ------------------- | -------------------- | ---------------------- |
+| **ESP32 DEVKIT V1** | Vi điều khiển chính  | WiFi 2.4GHz            |
+| **DHT11**           | Đo nhiệt độ & độ ẩm  | Digital (GPIO 4)       |
+| **BH1750**          | Đo cường độ ánh sáng | I2C (SDA: 21, SCL: 22) |
 
-```bash
-createdb iot
+## 🚀 Hướng dẫn cài đặt
+
+### Yêu cầu
+
+- Node.js >= 18
+- PostgreSQL >= 14
+- Arduino IDE 2.x (cho ESP32)
+
+### Bước 1: Tạo Database
+
+Mở pgAdmin hoặc psql, tạo database mới:
+
+```sql
+CREATE DATABASE iot;
 ```
 
-Tạo bảng:
+Sau đó chạy file schema để tạo các bảng:
 
 ```bash
 psql -d iot -f server/sql/schema.sql
 ```
 
-Thêm dữ liệu mẫu nếu chưa có ESP32:
+Hoặc mở pgAdmin → chọn database `iot` → Query Tool → dán nội dung file `server/sql/schema.sql` và chạy.
 
-```bash
-psql -d iot -f server/sql/seed.sql
-```
-
-Nếu dùng pgAdmin, mở database `iot`, chọn Query Tool, sau đó chạy nội dung trong `server/sql/schema.sql`.
-
-## 2. Chạy Backend
+### Bước 2: Cấu hình và chạy Backend
 
 ```bash
 cd server
 npm install
-copy .env.example .env
-npm run dev
 ```
 
-Sửa `server/.env` theo PostgreSQL local của bạn:
+Tạo file `server/.env` với nội dung:
 
 ```env
 PORT=3001
-DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/iot
+DB_USER=postgres
+DB_PASSWORD=YOUR_POSTGRES_PASSWORD
+DB_NAME=iot
+DB_HOST=localhost
+DB_PORT=5432
+
 DEFAULT_DEVICE_ID=esp32_01
-IOT_API_KEY=change-this-demo-key
+IOT_API_KEY=your-api-key
+JWT_SECRET=your-jwt-secret
 ```
 
-API chính:
+Tạo tài khoản quản trị viên (chỉ cần làm 1 lần):
 
-- `GET /api/health`: kiểm tra backend và database.
-- `POST /api/readings`: ESP32 gửi dữ liệu cảm biến.
-- `GET /api/readings/latest`: lấy bản ghi mới nhất.
-- `GET /api/readings/history?limit=20`: lấy lịch sử để vẽ chart.
-- `GET /api/devices`: lấy danh sách thiết bị, trạng thái online/offline và `last_seen`.
-- `GET /api/alerts/unresolved`: lấy cảnh báo chưa xử lý.
+```bash
+node src/scripts/create-admin.js
+```
 
-Payload ESP32 gửi lên:
+Chạy server:
+
+```bash
+npm run dev
+```
+
+Server sẽ chạy tại `http://localhost:3001`.
+
+### Bước 3: Cấu hình và chạy Frontend
+
+Mở terminal mới tại thư mục gốc của dự án:
+
+```bash
+npm install
+```
+
+Tạo file `.env`:
+
+```env
+VITE_API_URL=http://localhost:3001
+VITE_DEVICE_ID=esp32_01
+```
+
+Chạy dashboard:
+
+```bash
+npm run dev
+```
+
+Dashboard sẽ chạy tại `http://localhost:5173`.
+
+### Bước 4: Nạp firmware cho ESP32
+
+1. Mở `firmware/esp32_greenhouse/esp32_greenhouse.ino` bằng Arduino IDE.
+2. Tạo file `config.h` trong cùng thư mục:
+
+```cpp
+#pragma once
+
+const char* WIFI_SSID = "TEN_WIFI";
+const char* WIFI_PASSWORD = "MAT_KHAU_WIFI";
+const char* DEVICE_ID = "esp32_01";
+const char* API_BASE_URL = "http://IP_MAY_TINH:3001";
+const char* IOT_API_KEY = "your-api-key";
+```
+
+> **Lưu ý:** `API_BASE_URL` phải là IPv4 của máy chạy backend (lấy bằng lệnh `ipconfig`), không dùng `localhost`. ESP32 và máy tính phải cùng mạng WiFi.
+
+3. Chọn board `DOIT ESP32 DEVKIT V1` và cổng COM đúng.
+4. Nhấn Upload.
+
+## 📡 API Endpoints
+
+### Xác thực (Public)
+
+| Method | Endpoint             | Mô tả                        |
+| ------ | -------------------- | ---------------------------- |
+| `POST` | `/api/auth/register` | Đăng ký tài khoản            |
+| `POST` | `/api/auth/login`    | Đăng nhập, nhận JWT token    |
+| `GET`  | `/api/auth/me`       | Lấy thông tin user (cần JWT) |
+
+### Dữ liệu cảm biến (Cần JWT)
+
+| Method | Endpoint                 | Mô tả                                           |
+| ------ | ------------------------ | ----------------------------------------------- |
+| `GET`  | `/api/health`            | Kiểm tra trạng thái backend                     |
+| `POST` | `/api/readings`          | ESP32 gửi dữ liệu (cần API Key)                 |
+| `GET`  | `/api/readings/latest`   | Bản ghi cảm biến mới nhất                       |
+| `GET`  | `/api/readings/history`  | Lịch sử cảm biến (hỗ trợ `from`, `to`, `limit`) |
+| `GET`  | `/api/devices`           | Danh sách thiết bị và trạng thái                |
+| `GET`  | `/api/alerts/unresolved` | Cảnh báo chưa xử lý                             |
+
+### Payload ESP32
 
 ```json
 {
@@ -74,86 +162,69 @@ Payload ESP32 gửi lên:
 }
 ```
 
-Request ghi dữ liệu từ ESP32 cần gửi header:
+Header bắt buộc: `x-api-key: your-api-key`
 
-```http
-x-api-key: change-this-demo-key
+## ✅ Chức năng chính
+
+- 🔐 **Đăng nhập bảo mật** bằng JWT token cho dashboard
+- 📊 **Dashboard real-time** hiển thị nhiệt độ, độ ẩm, ánh sáng
+- 📈 **Biểu đồ lịch sử** với bộ lọc theo khoảng thời gian
+- ⚠️ **Hệ thống cảnh báo** khi thông số vượt ngưỡng
+- 🟢 **Trạng thái thiết bị** online/offline tự động
+- ⚙️ **Tùy chỉnh ngưỡng** cảnh báo cho từng cảm biến
+- 🔑 **API Key** bảo vệ endpoint ghi dữ liệu từ thiết bị
+
+## 🛠 Công nghệ sử dụng
+
+| Thành phần   | Công nghệ                    |
+| ------------ | ---------------------------- |
+| **Firmware** | Arduino C++ (ESP32)          |
+| **Backend**  | Node.js, Express.js          |
+| **Database** | PostgreSQL                   |
+| **Frontend** | React 19, Vite, Recharts     |
+| **Xác thực** | JWT (jsonwebtoken), bcryptjs |
+| **UI Icons** | Lucide React                 |
+
+## 📁 Cấu trúc dự án
+
+```
+Du_an_giam_sat_moi_truong_IoT/
+├── firmware/                    # Mã nguồn ESP32
+│   └── esp32_greenhouse/
+│       ├── esp32_greenhouse.ino # Code chính
+│       └── config.h             # Cấu hình WiFi, API
+├── server/                      # Backend API
+│   ├── src/
+│   │   ├── index.js             # Entry point, routes
+│   │   ├── db.js                # Kết nối PostgreSQL
+│   │   ├── controllers/         # Xử lý logic auth
+│   │   ├── middleware/          # JWT middleware
+│   │   └── scripts/             # Script tạo admin
+│   └── sql/
+│       ├── schema.sql           # Database schema
+│       └── seed.sql             # Dữ liệu mẫu
+├── src/                         # Frontend React
+│   ├── components/              # UI Components
+│   ├── context/                 # Auth Context
+│   ├── hooks/                   # Custom hooks
+│   └── pages/                   # Các trang
+└── README.md
 ```
 
-## 3. Chạy Frontend
+## 🧪 Kiểm tra nhanh
 
 ```bash
-npm install
-copy .env.example .env
-npm run dev
-```
-
-Frontend dùng:
-
-```env
-VITE_API_URL=http://localhost:3001
-VITE_DEVICE_ID=esp32_01
-```
-
-Mở URL Vite hiển thị trong terminal, thường là `http://localhost:5173`.
-
-## 4. Nạp Code ESP32
-
-Firmware nằm ở `firmware/esp32_greenhouse/esp32_greenhouse.ino`.
-
-Trước khi upload:
-
-1. Copy `firmware/esp32_greenhouse/config.example.h`.
-2. Đổi tên bản copy thành `config.h`.
-3. Sửa WiFi, IP laptop và API key trong `config.h`.
-
-Ví dụ:
-
-```cpp
-const char* WIFI_SSID = "YOUR_WIFI_NAME";
-const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
-const char* DEVICE_ID = "esp32_01";
-const char* API_BASE_URL = "http://192.168.1.10:3001";
-const char* IOT_API_KEY = "change-this-demo-key";
-```
-
-`API_BASE_URL` phải là IPv4 của máy chạy backend trong cùng mạng WiFi, không dùng `localhost`.
-
-## 5. Test Nhanh Backend
-
-```bash
+# Kiểm tra backend
 curl http://localhost:3001/api/health
-```
 
-```bash
+# Giả lập ESP32 gửi dữ liệu
 curl -X POST http://localhost:3001/api/readings ^
   -H "Content-Type: application/json" ^
-  -H "x-api-key: change-this-demo-key" ^
+  -H "x-api-key: your-api-key" ^
   -d "{\"device_id\":\"esp32_01\",\"temperature\":28.5,\"humidity\":72,\"light\":430}"
 ```
 
-```bash
-curl http://localhost:3001/api/readings/latest
-curl http://localhost:3001/api/readings/history?limit=20
-curl http://localhost:3001/api/devices
-curl http://localhost:3001/api/alerts/unresolved
-```
+## 👤 Tác giả
 
-## 6. Chức năng chính
-
-- Lưu dữ liệu cảm biến vào PostgreSQL.
-- Xem dữ liệu mới nhất trên dashboard.
-- Xem lại lịch sử cảm biến theo khoảng thời gian.
-- Hiển thị trạng thái ESP32 online/offline.
-- Cảnh báo khi nhiệt độ, độ ẩm hoặc ánh sáng vượt ngưỡng.
-- Có thể bật/tắt cảnh báo trên dashboard.
-- API ghi dữ liệu có API key để tránh gửi dữ liệu giả từ bên ngoài.
-
-## 7. Hướng mở rộng
-
-Nếu muốn nâng cấp sau khi demo MVP ổn định:
-
-- Thêm biểu đồ riêng cho từng cảm biến.
-- Thêm export CSV cho lịch sử cảm biến.
-- Thêm MQTT để đúng kiến trúc IoT production hơn.
-- Thêm đăng nhập người dùng cho dashboard.
+- **Tạ Minh Quân**
+- Email: taminhquan792004@gmail.com
