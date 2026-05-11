@@ -10,7 +10,7 @@ Hệ thống giám sát môi trường thông minh cho mô hình nhà kính cây
 │   + BH1750      │    (API Key)        │  REST API    │              │  Database  │
 └─────────────────┘                     └──────┬───────┘              └──────┬─────┘
                                                │                            │
-                                               │  JWT Auth                  │  Query
+                                               │  Data Fetch                │  Query
                                                ▼                            ▼
                                         ┌──────────────┐          ┌──────────────┐
                                         │  React SPA   │ ◄────────│  API Server  │
@@ -70,14 +70,6 @@ DB_PORT=5432
 
 DEFAULT_DEVICE_ID=esp32_01
 IOT_API_KEY=your-api-key
-JWT_SECRET=your-jwt-secret
-```
-
-Tạo tài khoản quản trị viên (chỉ cần làm 1 lần):
-
-```bash
-# Trong thư mục server
-node src/scripts/create-admin.js
 ```
 
 Chạy server:
@@ -141,7 +133,7 @@ const char* IOT_API_KEY = "your-api-key";
 | `POST` | `/api/auth/login`    | Đăng nhập, nhận JWT token    |
 | `GET`  | `/api/auth/me`       | Lấy thông tin user (cần JWT) |
 
-### Dữ liệu cảm biến (Cần JWT)
+### API Dữ liệu (Public)
 
 | Method | Endpoint                 | Mô tả                                           |
 | ------ | ------------------------ | ----------------------------------------------- |
@@ -168,8 +160,7 @@ Header bắt buộc: `x-api-key: your-api-key`
 
 ## ✅ Chức năng chính
 
-- 🌿 **Premium Light Aesthetic**: Giao diện sáng sủa, chuyên nghiệp và hiện đại, tối ưu cho việc quan sát lâu dài.
-- 🔐 **Đăng nhập bảo mật** bằng JWT token cho dashboard.
+- 🌿 **Premium Dark Navy Aesthetic**: Giao diện tối chuyên nghiệp, tinh tế, tối ưu cho việc quan sát lâu dài và thuyết trình học thuật.
 - 📊 **Dashboard real-time** hiển thị nhiệt độ, độ ẩm, ánh sáng với độ trễ cực thấp.
 - ⏱️ **Tần suất đo đạc tối ưu**: ESP32 gửi dữ liệu mỗi **5 giây** (Chế độ Demo), đảm bảo tính thời thực tuyệt đối.
 - 📈 **Biểu đồ lịch sử** với bộ lọc theo khoảng thời gian linh hoạt.
@@ -211,7 +202,6 @@ Du_an_giam_sat_moi_truong_IoT/
 │       └── seed.sql             # Dữ liệu mẫu
 ├── src/                         # Frontend React
 │   ├── components/              # UI Components
-│   ├── context/                 # Auth Context
 │   ├── hooks/                   # Custom hooks
 │   └── pages/                   # Các trang
 └── README.md
