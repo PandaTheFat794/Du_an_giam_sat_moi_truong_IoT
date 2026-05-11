@@ -1,7 +1,7 @@
 import { Clock, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
-export const Header = ({ title, user }) => {
+export const Header = ({ title }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -26,11 +26,6 @@ export const Header = ({ title, user }) => {
     <div className="header">
       <div>
         <div className="header-title">{title || 'Tổng quan'}</div>
-        {user && (
-          <div className="header-greeting">
-            Xin chào, <strong>{user.full_name || user.username}</strong>
-          </div>
-        )}
       </div>
       <div className="header-right">
         <div className="header-clock">

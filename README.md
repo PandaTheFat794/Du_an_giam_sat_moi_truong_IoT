@@ -76,6 +76,7 @@ JWT_SECRET=your-jwt-secret
 Tạo tài khoản quản trị viên (chỉ cần làm 1 lần):
 
 ```bash
+# Trong thư mục server
 node src/scripts/create-admin.js
 ```
 
@@ -149,7 +150,8 @@ const char* IOT_API_KEY = "your-api-key";
 | `GET`  | `/api/readings/latest`   | Bản ghi cảm biến mới nhất                       |
 | `GET`  | `/api/readings/history`  | Lịch sử cảm biến (hỗ trợ `from`, `to`, `limit`) |
 | `GET`  | `/api/devices`           | Danh sách thiết bị và trạng thái                |
-| `GET`  | `/api/alerts/unresolved` | Cảnh báo chưa xử lý                             |
+| `GET`  | `/api/alerts/unresolved` | Lấy danh sách cảnh báo chưa xử lý               |
+| `POST` | `/api/alerts/:id/resolve`| Đánh dấu một cảnh báo là đã xử lý               |
 
 ### Payload ESP32
 
@@ -166,13 +168,17 @@ Header bắt buộc: `x-api-key: your-api-key`
 
 ## ✅ Chức năng chính
 
-- 🔐 **Đăng nhập bảo mật** bằng JWT token cho dashboard
-- 📊 **Dashboard real-time** hiển thị nhiệt độ, độ ẩm, ánh sáng
-- 📈 **Biểu đồ lịch sử** với bộ lọc theo khoảng thời gian
-- ⚠️ **Hệ thống cảnh báo** khi thông số vượt ngưỡng
-- 🟢 **Trạng thái thiết bị** online/offline tự động
-- ⚙️ **Tùy chỉnh ngưỡng** cảnh báo cho từng cảm biến
-- 🔑 **API Key** bảo vệ endpoint ghi dữ liệu từ thiết bị
+- 🌿 **Premium Light Aesthetic**: Giao diện sáng sủa, chuyên nghiệp và hiện đại, tối ưu cho việc quan sát lâu dài.
+- 🔐 **Đăng nhập bảo mật** bằng JWT token cho dashboard.
+- 📊 **Dashboard real-time** hiển thị nhiệt độ, độ ẩm, ánh sáng với độ trễ cực thấp.
+- ⏱️ **Tần suất đo đạc tối ưu**: ESP32 gửi dữ liệu mỗi **5 giây** (Chế độ Demo), đảm bảo tính thời thực tuyệt đối.
+- 📈 **Biểu đồ lịch sử** với bộ lọc theo khoảng thời gian linh hoạt.
+- ⚠️ **Hệ thống cảnh báo thông minh**: 
+    - Thông báo qua Gmail và Web mỗi **10 giây** (Chế độ Demo) nếu sự cố kéo dài.
+    - Chức năng **"Đã xử lý"** cho phép xác nhận và tạm dừng cảnh báo ngay trên Dashboard.
+- 🟢 **Trạng thái thiết bị** online/offline tự động.
+- ⚙️ **Tùy chỉnh ngưỡng** cảnh báo cho từng loại cảm biến.
+- 🔑 **API Key** bảo vệ endpoint ghi dữ liệu từ thiết bị.
 
 ## 🛠 Công nghệ sử dụng
 
@@ -220,7 +226,7 @@ curl http://localhost:3001/api/health
 # Giả lập ESP32 gửi dữ liệu
 curl -X POST http://localhost:3001/api/readings ^
   -H "Content-Type: application/json" ^
-  -H "x-api-key: your-api-key" ^
+  -H "x-api-key: abc123" ^
   -d "{\"device_id\":\"esp32_01\",\"temperature\":28.5,\"humidity\":72,\"light\":430}"
 ```
 

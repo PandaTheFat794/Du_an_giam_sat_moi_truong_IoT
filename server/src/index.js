@@ -4,9 +4,58 @@ import dotenv from 'dotenv';
 import { query } from './db.js';
 import * as authController from './controllers/authController.js';
 import { authenticateToken } from './middleware/authMiddleware.js';
+import nodemailer from 'nodemailer';
 
 
 dotenv.config();
+
+// --- CẤU HÌNH CẢNH BÁO GMAIL ---
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS  // Mật khẩu ứng dụng của Google
+  }
+});
+
+const sendEmailAlert = async (message) => {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return;
+  
+  try {
+    await transporter.sendMail({
+      from: `"SmartGarden Alert" <${process.env.EMAIL_USER}>`,
+      to: process.env.EMAIL_RECEIVER || process.env.EMAIL_USER,
+      subject: "⚠️ CẢNH BÁO SMARTGARDEN",
+      text: message,
+      html: `
+        <div style="max-width: 600px; margin: 0 auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden;">
+          <div style="background-color: #ff4d4f; color: white; padding: 20px; text-align: center;">
+            <h1 style="margin: 0; font-size: 24px;">⚠️ CẢNH BÁO HỆ THỐNG</h1>
+          </div>
+          <div style="padding: 30px; background-color: #ffffff;">
+            <p style="font-size: 18px; color: #333; margin-top: 0;">Xin chào,</p>
+            <p style="font-size: 16px; color: #555; line-height: 1.6;">
+              Hệ thống SmartGarden vừa phát hiện một thông số môi trường không đạt yêu cầu:
+            </p>
+            <div style="background-color: #fff2f0; border-left: 4px solid #ff4d4f; padding: 15px; margin: 20px 0; font-weight: bold; color: #cf1322;">
+              ${message}
+            </div>
+            <p style="font-size: 14px; color: #888;">
+              Vui lòng kiểm tra lại nhà kính để đảm bảo môi trường tốt nhất cho sự phát triển của cây trồng.
+            </p>
+          </div>
+          <div style="background-color: #f5f5f5; padding: 20px; text-align: center; color: #999; font-size: 12px;">
+            <p style="margin: 0;">Hệ thống SmartGarden IoT - Đại học Công nghệ (UET - VNU)</p>
+            <p style="margin: 5px 0 0;">Đây là email tự động, vui lòng không trả lời.</p>
+          </div>
+        </div>
+      `
+    });
+    console.log('Email alert sent successfully');
+  } catch (error) { 
+    console.error('Email Error:', error); 
+  }
+};
 
 const app = express();
 const port = Number(process.env.PORT || 3001);
@@ -106,25 +155,61 @@ const mapDevice = (row) => ({
   created_at: row.created_at,
 });
 
-const buildAlerts = ({ deviceId, temperature, humidity, light }) => {
+// API lấy ngưỡng hiện tại
+app.get('/api/settings/thresholds', async (_req, res) => {
+  try {
+    const result = await query('SELECT sensor_type, min_val, max_val FROM threshold_settings');
+    const thresholds = {};
+    result.rows.forEach(row => {
+      thresholds[row.sensor_type] = { min: row.min_val, max: row.max_val };
+    });
+    res.json({ success: true, data: thresholds });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// API cập nhật ngưỡng
+app.post('/api/settings/thresholds', async (req, res) => {
+  const { temperature, humidity, light } = req.body;
+  try {
+    const updates = [
+      query('UPDATE threshold_settings SET min_val = $1, max_val = $2 WHERE sensor_type = \'temperature\'', [temperature.min, temperature.max]),
+      query('UPDATE threshold_settings SET min_val = $1, max_val = $2 WHERE sensor_type = \'humidity\'', [humidity.min, humidity.max]),
+      query('UPDATE threshold_settings SET min_val = $1, max_val = $2 WHERE sensor_type = \'light\'', [light.min, light.max])
+    ];
+    await Promise.all(updates);
+    res.json({ success: true, message: 'Cập nhật ngưỡng thành công' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+const buildAlerts = (reading, thresholds) => {
+  const { device_id: deviceId, temperature, humidity, light } = reading;
   const alerts = [];
 
-  if (temperature > greenhouseThresholds.temperature.max) {
-    alerts.push(['temperature_high', `Nhiệt độ cao: ${temperature}°C, vượt ngưỡng ${greenhouseThresholds.temperature.max}°C`]);
-  } else if (temperature < greenhouseThresholds.temperature.min) {
-    alerts.push(['temperature_low', `Nhiệt độ thấp: ${temperature}°C, dưới ngưỡng ${greenhouseThresholds.temperature.min}°C`]);
+  // Sử dụng ngưỡng từ tham số, nếu thiếu thì dùng ngưỡng mặc định toàn cục
+  const t = thresholds.temperature || greenhouseThresholds.temperature;
+  const h = thresholds.humidity || greenhouseThresholds.humidity;
+  const l = thresholds.light || greenhouseThresholds.light;
+
+  if (temperature > t.max) {
+    alerts.push(['temperature_high', `Nhiệt độ quá cao: ${temperature}°C. Gợi ý: Bật quạt thông gió hoặc hệ thống phun sương.`]);
+  } else if (temperature < t.min) {
+    alerts.push(['temperature_low', `Nhiệt độ quá thấp: ${temperature}°C. Gợi ý: Đóng cửa kính hoặc bật đèn sưởi.`]);
   }
 
-  if (humidity > greenhouseThresholds.humidity.max) {
-    alerts.push(['humidity_high', `Độ ẩm cao: ${humidity}%, vượt ngưỡng ${greenhouseThresholds.humidity.max}%`]);
-  } else if (humidity < greenhouseThresholds.humidity.min) {
-    alerts.push(['humidity_low', `Độ ẩm thấp: ${humidity}%, dưới ngưỡng ${greenhouseThresholds.humidity.min}%`]);
+  if (humidity > h.max) {
+    alerts.push(['humidity_high', `Độ ẩm quá cao: ${humidity}%. Gợi ý: Bật quạt thông gió để giảm độ ẩm.`]);
+  } else if (humidity < h.min) {
+    alerts.push(['humidity_low', `Độ ẩm quá thấp: ${humidity}%. Gợi ý: Kích hoạt hệ thống tưới phun sương.`]);
   }
 
-  if (light > greenhouseThresholds.light.max) {
-    alerts.push(['light_high', `Ánh sáng mạnh: ${light} lux, vượt ngưỡng ${greenhouseThresholds.light.max} lux`]);
-  } else if (light < greenhouseThresholds.light.min) {
-    alerts.push(['light_low', `Ánh sáng yếu: ${light} lux, dưới ngưỡng ${greenhouseThresholds.light.min} lux`]);
+  if (light > l.max) {
+    alerts.push(['light_high', `Ánh sáng quá mạnh: ${light} lux. Gợi ý: Đóng rèm che nắng để bảo vệ cây.`]);
+  } else if (light < l.min) {
+    alerts.push(['light_low', `Ánh sáng quá yếu: ${light} lux. Gợi ý: Bật đèn chiếu sáng bổ sung.`]);
   }
 
   return alerts.map(([alertType, message]) => ({ deviceId, alertType, message }));
@@ -184,14 +269,74 @@ app.post('/api/readings', requireApiKey, async (req, res) => {
       [deviceId, temperature, humidity, light],
     );
 
-    const generatedAlerts = buildAlerts({ deviceId, temperature, humidity, light });
+    // Lấy ngưỡng từ Database để kiểm tra cảnh báo
+    const thresholdsResult = await query('SELECT sensor_type, min_val, max_val FROM threshold_settings');
+    const thresholds = {};
+    thresholdsResult.rows.forEach(row => {
+      thresholds[row.sensor_type] = { 
+        min: Number(row.min_val), 
+        max: Number(row.max_val) 
+      };
+    });
+
+    const generatedAlerts = buildAlerts(result.rows[0], thresholds);
+    const now = new Date();
+
+    // 0. Kiểm tra Master Switch (Bật/Tắt toàn bộ hệ thống cảnh báo)
+    const settingsResult = await query("SELECT setting_value FROM global_settings WHERE setting_key = 'alerts_enabled'");
+    const alertsMasterEnabled = settingsResult.rows[0]?.setting_value === true;
+
+    if (!alertsMasterEnabled) {
+      return res.status(201).json({ success: true, data: mapReading(result.rows[0]) });
+    }
 
     for (const alert of generatedAlerts) {
-      await query(
-        `INSERT INTO alerts (device_id, alert_type, message)
-         VALUES ($1, $2, $3)`,
-        [alert.deviceId, alert.alertType, alert.message],
+      // Tìm cảnh báo gần nhất của loại này cho thiết bị này
+      const lastAlert = await query(
+        `SELECT id, is_resolved, triggered_at, resolved_at FROM alerts 
+         WHERE device_id = $1 AND alert_type = $2
+         ORDER BY triggered_at DESC LIMIT 1`,
+        [alert.deviceId, alert.alertType]
       );
+
+      let shouldSend = false;
+
+      if (lastAlert.rows.length === 0) {
+        // Chưa từng có cảnh báo loại này -> gửi ngay
+        shouldSend = true;
+      } else {
+        const item = lastAlert.rows[0];
+        if (item.is_resolved === false) {
+          // Trường hợp 1: Chưa được xử lý -> lặp lại sau mỗi 5 phút
+          const fiveMinsAgo = new Date(now.getTime() - 5 * 60 * 1000);
+          if (new Date(item.triggered_at) < fiveMinsAgo) {
+            shouldSend = true;
+          } else {
+            console.log(`Skipping repeat alert for ${alert.alertType} - unresolved but still within 5 min cooldown.`);
+          }
+        } else {
+          // Trường hợp 2: Đã xử lý rồi -> lặp lại sau mỗi 10 phút nếu sự cố vẫn còn
+          const tenMinsAgo = new Date(now.getTime() - 10 * 60 * 1000);
+          const resolvedTime = item.resolved_at ? new Date(item.resolved_at) : new Date(item.triggered_at);
+          if (resolvedTime < tenMinsAgo) {
+            shouldSend = true;
+          } else {
+            console.log(`Skipping alert for ${alert.alertType} - recently handled by user (mute for 10 min).`);
+          }
+        }
+      }
+
+      if (shouldSend) {
+        // Tạo bản ghi cảnh báo mới
+        await query(
+          `INSERT INTO alerts (device_id, alert_type, message)
+           VALUES ($1, $2, $3)`,
+          [alert.deviceId, alert.alertType, alert.message],
+        );
+        
+        // Gửi cảnh báo về Email
+        await sendEmailAlert(alert.message);
+      }
     }
 
     return res.status(201).json({ success: true, data: mapReading(result.rows[0]) });
@@ -200,7 +345,7 @@ app.post('/api/readings', requireApiKey, async (req, res) => {
   }
 });
 
-app.get('/api/devices', authenticateToken, async (_req, res) => {
+app.get('/api/devices', async (_req, res) => {
 
   try {
     const result = await query(
@@ -225,7 +370,7 @@ app.get('/api/devices', authenticateToken, async (_req, res) => {
   }
 });
 
-app.get('/api/devices/:deviceId/latest', authenticateToken, async (req, res) => {
+app.get('/api/devices/:deviceId/latest', async (req, res) => {
 
   const deviceId = String(req.params.deviceId).trim();
 
@@ -244,7 +389,7 @@ app.get('/api/devices/:deviceId/latest', authenticateToken, async (req, res) => 
   }
 });
 
-app.get('/api/devices/:deviceId/history', authenticateToken, async (req, res) => {
+app.get('/api/devices/:deviceId/history', async (req, res) => {
 
   const deviceId = String(req.params.deviceId).trim();
   const limit = Math.min(Math.max(Number(req.query.limit || 20), 1), 200);
@@ -260,10 +405,21 @@ app.get('/api/devices/:deviceId/history', authenticateToken, async (req, res) =>
   }
 });
 
-app.get('/api/alerts/unresolved', authenticateToken, async (req, res) => {
+app.post('/api/alerts/:id/resolve', async (req, res) => {
+  const alertId = req.params.id;
+  try {
+    await query(
+      'UPDATE alerts SET is_resolved = TRUE, resolved_at = CURRENT_TIMESTAMP WHERE id = $1',
+      [alertId]
+    );
+    res.json({ success: true, message: 'Đã đánh dấu cảnh báo là đã xử lý' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
+app.get('/api/alerts/unresolved', async (req, res) => {
   const deviceId = String(req.query.device_id || defaultDeviceId).trim();
-
   try {
     const result = await query(
       `SELECT * FROM alerts
@@ -272,14 +428,51 @@ app.get('/api/alerts/unresolved', authenticateToken, async (req, res) => {
        LIMIT 20`,
       [deviceId],
     );
-
-    return res.json({ success: true, data: result.rows });
+    res.json({ success: true, data: result.rows });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
-app.get('/api/readings/latest', authenticateToken, async (req, res) => {
+app.get('/api/alerts/history', async (req, res) => {
+  const deviceId = String(req.query.device_id || defaultDeviceId).trim();
+  const limit = parseInt(req.query.limit) || 50;
+  try {
+    const result = await query(
+      `SELECT * FROM alerts
+       WHERE device_id = $1
+       ORDER BY triggered_at DESC
+       LIMIT $2`,
+      [deviceId, limit],
+    );
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Endpoint cho Master Switch - Bật/Tắt toàn bộ hệ thống cảnh báo
+app.get('/api/settings/alerts/status', async (req, res) => {
+  try {
+    const result = await query("SELECT setting_value FROM global_settings WHERE setting_key = 'alerts_enabled'");
+    res.json({ success: true, alerts_enabled: result.rows[0]?.setting_value === true });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.post('/api/settings/alerts/toggle', async (req, res) => {
+  try {
+    const current = await query("SELECT setting_value FROM global_settings WHERE setting_key = 'alerts_enabled'");
+    const nextValue = !(current.rows[0]?.setting_value === true);
+    await query("UPDATE global_settings SET setting_value = $1, updated_at = CURRENT_TIMESTAMP WHERE setting_key = 'alerts_enabled'", [nextValue]);
+    res.json({ success: true, alerts_enabled: nextValue });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.get('/api/readings/latest', async (req, res) => {
 
   const deviceId = String(req.query.device_id || defaultDeviceId).trim();
 
@@ -298,7 +491,7 @@ app.get('/api/readings/latest', authenticateToken, async (req, res) => {
   }
 });
 
-app.get('/api/readings/history', authenticateToken, async (req, res) => {
+app.get('/api/readings/history', async (req, res) => {
 
   const deviceId = String(req.query.device_id || defaultDeviceId).trim();
   const limit = Math.min(Math.max(Number(req.query.limit || 20), 1), 200);
@@ -314,7 +507,7 @@ app.get('/api/readings/history', authenticateToken, async (req, res) => {
   }
 });
 
-app.get('/api/readings/stats', authenticateToken, async (req, res) => {
+app.get('/api/readings/stats', async (req, res) => {
   const deviceId = String(req.query.device_id || defaultDeviceId).trim();
 
   try {

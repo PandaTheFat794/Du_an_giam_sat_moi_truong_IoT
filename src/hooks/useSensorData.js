@@ -63,6 +63,7 @@ export const useSensorData = () => {
   const [history, setHistory] = useState([]);
   const [stats, setStats] = useState({ today: null, week: null });
   const [alerts, setAlerts] = useState([]);
+  const [alertHistory, setAlertHistory] = useState([]);
   const [alertsEnabled, setAlertsEnabled] = useState(true);
   const [apiError, setApiError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -119,7 +120,7 @@ export const useSensorData = () => {
       detectedAlerts.push(createAlert({
         key: 'temperature_high',
         type: 'danger',
-        message: `Nhiệt độ báo động: ${data.temperature}°C (vượt ngưỡng ${currentThresholds.temperature.max}°C)`,
+        message: `Nhiệt độ quá cao: ${data.temperature}°C. Gợi ý: Bật quạt thông gió hoặc hệ thống phun sương.`,
         time: timeStr,
         date: dateStr,
         sensor: 'Temperature',
@@ -128,7 +129,7 @@ export const useSensorData = () => {
       detectedAlerts.push(createAlert({
         key: 'temperature_low',
         type: 'warning',
-        message: `Nhiệt độ thấp: ${data.temperature}°C (dưới ngưỡng ${currentThresholds.temperature.min}°C)`,
+        message: `Nhiệt độ quá thấp: ${data.temperature}°C. Gợi ý: Đóng cửa kính hoặc bật đèn sưởi.`,
         time: timeStr,
         date: dateStr,
         sensor: 'Temperature',
@@ -139,7 +140,7 @@ export const useSensorData = () => {
       detectedAlerts.push(createAlert({
         key: 'humidity_high',
         type: 'danger',
-        message: `Độ ẩm báo động: ${data.humidity}% (vượt ngưỡng ${currentThresholds.humidity.max}%)`,
+        message: `Độ ẩm quá cao: ${data.humidity}%. Gợi ý: Bật quạt thông gió để giảm độ ẩm.`,
         time: timeStr,
         date: dateStr,
         sensor: 'Humidity',
@@ -148,7 +149,7 @@ export const useSensorData = () => {
       detectedAlerts.push(createAlert({
         key: 'humidity_low',
         type: 'warning',
-        message: `Độ ẩm quá thấp: ${data.humidity}% (dưới ngưỡng ${currentThresholds.humidity.min}%)`,
+        message: `Độ ẩm quá thấp: ${data.humidity}%. Gợi ý: Kích hoạt hệ thống tưới phun sương.`,
         time: timeStr,
         date: dateStr,
         sensor: 'Humidity',
@@ -159,7 +160,7 @@ export const useSensorData = () => {
       detectedAlerts.push(createAlert({
         key: 'light_high',
         type: 'warning',
-        message: `Ánh sáng quá mạnh: ${data.light} lux (vượt ngưỡng ${currentThresholds.light.max} lux)`,
+        message: `Ánh sáng quá mạnh: ${data.light} lux. Gợi ý: Đóng rèm che nắng để bảo vệ cây.`,
         time: timeStr,
         date: dateStr,
         sensor: 'Light',
@@ -168,7 +169,7 @@ export const useSensorData = () => {
       detectedAlerts.push(createAlert({
         key: 'light_low',
         type: 'warning',
-        message: `Môi trường quá tối: ${data.light} lux (dưới ngưỡng ${currentThresholds.light.min} lux)`,
+        message: `Ánh sáng quá yếu: ${data.light} lux. Gợi ý: Bật đèn chiếu sáng bổ sung.`,
         time: timeStr,
         date: dateStr,
         sensor: 'Light',
@@ -185,29 +186,51 @@ export const useSensorData = () => {
     }
     saveMutedAlertKeys(mutedKeys);
 
-    const alertsToShow = detectedAlerts.filter((alert) => (
-      !mutedKeys.has(alert.key) && !activeAlertKeysRef.current.has(alert.key)
-    ));
-
+    // We no longer locally manage alertsToShow state directly from here
+    // as we will fetch them from the backend.
+    // However, we can keep track of detectedKeys for UI highlights if needed.
     activeAlertKeysRef.current = detectedKeys;
-
-    setAlerts((prev) => {
-      const stillActiveAlerts = prev.filter((alert) => detectedKeys.has(alert.key));
-      return [...alertsToShow, ...stillActiveAlerts].slice(0, 100);
-    });
   }, [alertsEnabled]);
+
+  // Hàm lưu ngưỡng về Backend
+  const saveThresholds = async (newThresholds) => {
+    try {
+      const response = await fetch(`${API_URL}/api/settings/thresholds`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newThresholds),
+      });
+      if (response.ok) {
+        setThresholds(newThresholds);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Lỗi khi lưu ngưỡng:', error);
+      return false;
+    }
+  };
 
   const fetchSensorData = useCallback(async () => {
     try {
-      const headers = {
-        'Authorization': `Bearer ${token}`
-      };
-
-      const [latestResponse, historyResponse, devicesResponse, statsResponse] = await Promise.all([
-        fetch(`${API_URL}/api/readings/latest?device_id=${DEVICE_ID}`, { headers }),
-        fetch(buildHistoryUrl(appliedHistoryFilter), { headers }),
-        fetch(`${API_URL}/api/devices`, { headers }),
-        fetch(`${API_URL}/api/readings/stats?device_id=${DEVICE_ID}`, { headers }),
+      const [
+        latestResponse, 
+        historyResponse, 
+        devicesResponse, 
+        statsResponse, 
+        thresholdsResponse, 
+        alertsResponse, 
+        alertHistoryResponse,
+        alertStatusResponse
+      ] = await Promise.all([
+        fetch(`${API_URL}/api/readings/latest?device_id=${DEVICE_ID}`),
+        fetch(buildHistoryUrl(appliedHistoryFilter)),
+        fetch(`${API_URL}/api/devices`),
+        fetch(`${API_URL}/api/readings/stats?device_id=${DEVICE_ID}`),
+        fetch(`${API_URL}/api/settings/thresholds`),
+        fetch(`${API_URL}/api/alerts/unresolved?device_id=${DEVICE_ID}`),
+        fetch(`${API_URL}/api/alerts/history?device_id=${DEVICE_ID}&limit=50`),
+        fetch(`${API_URL}/api/settings/alerts/status`),
       ]);
 
 
@@ -219,6 +242,7 @@ export const useSensorData = () => {
       const historyJson = await historyResponse.json();
       const devicesJson = await devicesResponse.json();
       const statsJson = await statsResponse.ok ? await statsResponse.json() : { data: { today: null, week: null } };
+      const thresholdsJson = await thresholdsResponse.ok ? await thresholdsResponse.json() : null;
       
       const latest = formatReading(latestJson.data);
       const formattedHistory = Array.isArray(historyJson.data) ? historyJson.data.map(formatReading) : [];
@@ -243,6 +267,45 @@ export const useSensorData = () => {
         setStats(statsJson.data);
       }
 
+      if (thresholdsJson && thresholdsJson.success) {
+        setThresholds(thresholdsJson.data);
+      }
+
+      if (alertsResponse.ok) {
+        const alertsJson = await alertsResponse.json();
+        const formattedAlerts = alertsJson.data.map(a => ({
+          id: a.id,
+          key: a.alert_type,
+          type: a.alert_type.includes('high') || a.alert_type.includes('danger') ? 'danger' : 'warning',
+          message: a.message,
+          is_resolved: a.is_resolved,
+          time: new Date(a.triggered_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          date: new Date(a.triggered_at).toLocaleDateString(),
+          sensor: a.alert_type.split('_')[0].charAt(0).toUpperCase() + a.alert_type.split('_')[0].slice(1)
+        }));
+        setAlerts(formattedAlerts);
+      }
+
+      if (alertHistoryResponse.ok) {
+        const historyJson = await alertHistoryResponse.json();
+        const formatted = historyJson.data.map(a => ({
+          id: a.id,
+          key: a.alert_type,
+          type: a.alert_type.includes('high') || a.alert_type.includes('danger') ? 'danger' : 'warning',
+          message: a.message,
+          is_resolved: a.is_resolved,
+          time: new Date(a.triggered_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          date: new Date(a.triggered_at).toLocaleDateString(),
+          sensor: a.alert_type.split('_')[0].charAt(0).toUpperCase() + a.alert_type.split('_')[0].slice(1)
+        }));
+        setAlertHistory(formatted);
+      }
+
+      if (alertStatusResponse.ok) {
+        const statusJson = await alertStatusResponse.json();
+        setAlertsEnabled(statusJson.alerts_enabled);
+      }
+
       setHistory(formattedHistory);
       setApiError('');
     } catch (error) {
@@ -258,31 +321,34 @@ export const useSensorData = () => {
     return () => clearInterval(interval);
   }, [fetchSensorData]);
 
-  const dismissAlert = (id) => {
-    setAlerts((prev) => {
-      const dismissedAlert = prev.find((alert) => alert.id === id);
-
-      if (dismissedAlert?.key) {
-        const nextMutedKeys = new Set(mutedAlertKeysRef.current);
-        nextMutedKeys.add(dismissedAlert.key);
-        mutedAlertKeysRef.current = nextMutedKeys;
-        saveMutedAlertKeys(nextMutedKeys);
+  const dismissAlert = async (id) => {
+    try {
+      const response = await fetch(`${API_URL}/api/alerts/${id}/resolve`, {
+        method: 'POST',
+      });
+      if (response.ok) {
+        setAlerts((prev) => prev.filter((alert) => alert.id !== id));
       }
-
-      return prev.filter((alert) => alert.id !== id);
-    });
+    } catch (error) {
+      console.error('Lỗi khi xử lý cảnh báo:', error);
+    }
   };
 
-  const toggleAlertsEnabled = () => {
-    setAlertsEnabled((enabled) => {
-      const nextEnabled = !enabled;
-
-      if (!nextEnabled) {
-        setAlerts([]);
+  const toggleAlertsEnabled = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/settings/alerts/toggle`, {
+        method: 'POST',
+      });
+      if (response.ok) {
+        const json = await response.json();
+        setAlertsEnabled(json.alerts_enabled);
+        if (!json.alerts_enabled) {
+          setAlerts([]);
+        }
       }
-
-      return nextEnabled;
-    });
+    } catch (error) {
+      console.error('Lỗi khi bật/tắt cảnh báo:', error);
+    }
   };
 
   const applyHistoryFilter = () => {
@@ -300,8 +366,9 @@ export const useSensorData = () => {
     history,
     stats,
     alerts,
+    alertHistory,
     thresholds,
-    setThresholds,
+    setThresholds: saveThresholds, // Ghi đè setThresholds mặc định bằng hàm saveThresholds
     dismissAlert,
     alertsEnabled,
     toggleAlertsEnabled,

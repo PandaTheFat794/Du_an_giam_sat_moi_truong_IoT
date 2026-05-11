@@ -7,36 +7,35 @@ const sensorIcons = {
   light: Sun,
 };
 
-export const SensorCard = ({ title, value, unit, dataKey, data, color, isWarning }) => {
+export const SensorCard = ({ title, value, unit, dataKey, data, color, isWarning, statusText }) => {
   const Icon = sensorIcons[dataKey] || Thermometer;
 
   return (
     <div className="card sensor-card" style={{ '--sensor-color': color }}>
       <div className="sensor-card-header">
-        <div className="sensor-title">
-          <div className="sensor-icon-circle" style={{ backgroundColor: `${color}15`, color: color }}>
-            <Icon size={18} />
+        <div>
+          <div className="sensor-title">{title}</div>
+          <div className="sensor-value-container">
+            <span className="sensor-value">{value}</span>
+            <span className="sensor-unit">{unit}</span>
           </div>
-          {title}
+          <div className="sensor-status">
+            <span className={`status-dot ${isWarning ? 'inactive' : 'active'}`} />
+            <span className="sensor-status-text" style={{ color: isWarning ? 'var(--accent)' : 'var(--secondary)' }}>
+              {isWarning ? statusText : 'Bình thường'}
+            </span>
+          </div>
         </div>
-        {isWarning && (
-          <div className="sensor-warning">
-            <AlertTriangle size={20} />
-          </div>
-        )}
+        <div className="sensor-icon-circle" style={{ backgroundColor: `${color}18`, color: color }}>
+          <Icon size={20} />
+        </div>
       </div>
 
-      <div className="sensor-value-container">
-        <span className="sensor-value">{value}</span>
-        <span className="sensor-unit">{unit}</span>
-      </div>
-
-      <div className="sensor-status">
-        <span className={`status-dot ${isWarning ? 'inactive' : 'active'}`}></span>
-        <span className="sensor-status-text">
-          {isWarning ? 'Vượt ngưỡng' : 'Bình thường'}
-        </span>
-      </div>
+      {isWarning && (
+        <div className="sensor-warning">
+          <AlertTriangle size={16} />
+        </div>
+      )}
 
       <div className="sensor-chart">
         <ResponsiveContainer width="100%" height="100%">
@@ -45,7 +44,7 @@ export const SensorCard = ({ title, value, unit, dataKey, data, color, isWarning
               type="monotone"
               dataKey={dataKey}
               stroke={color}
-              strokeWidth={2.5}
+              strokeWidth={2}
               dot={false}
               isAnimationActive={false}
             />

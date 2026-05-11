@@ -3,22 +3,18 @@ import './App.css';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { useSensorData } from './hooks/useSensorData';
-import { AuthProvider, useAuth } from './context/AuthContext';
-
 // Import Pages
 import { Dashboard } from './pages/Dashboard';
 import { Alarms } from './pages/Alarms';
 import { Settings } from './pages/Settings';
-import { Placeholder } from './pages/Placeholder';
-import { LoginPage } from './pages/LoginPage';
 
 function AppContent() {
-  const { user, isAuthenticated, loading, logout } = useAuth();
   const {
     currentData,
     history,
     stats,
     alerts,
+    alertHistory,
     thresholds,
     setThresholds,
     dismissAlert,
@@ -35,19 +31,6 @@ function AppContent() {
   } = useSensorData();
   
   const [activeTab, setActiveTab] = useState('dashboard');
-
-  if (loading) {
-    return (
-      <div className="loading-screen">
-        <div className="loader"></div>
-        <p>Đang tải hệ thống...</p>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <LoginPage />;
-  }
 
   const renderContent = () => {
     switch (activeTab) {
@@ -71,7 +54,7 @@ function AppContent() {
           clearHistoryFilter={clearHistoryFilter}
         />;
       case 'alarms':
-        return <Alarms alerts={alerts} />;
+        return <Alarms alerts={alertHistory} />;
       case 'settings':
         return <Settings thresholds={thresholds} setThresholds={setThresholds} />;
       default:
@@ -107,9 +90,9 @@ function AppContent() {
 
   return (
     <div className="app-container">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={logout} user={user} />
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       <div className="main-content">
-        <Header title={getPageTitle()} user={user} />
+        <Header title={getPageTitle()} />
         {renderContent()}
       </div>
     </div>
@@ -118,9 +101,7 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <AppContent />
   );
 }
 

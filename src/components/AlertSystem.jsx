@@ -36,10 +36,10 @@ export const AlertSystem = ({ alerts, dismissAlert, alertsEnabled, toggleAlertsE
               </div>
               <button
                 onClick={() => dismissAlert(alert.id)}
-                className="dismiss-alert-button"
-                title="Tắt cảnh báo này cho đến khi thông số trở lại bình thường"
+                className="resolve-alert-button"
+                title="Đánh dấu là đã xử lý và tắt cảnh báo này"
               >
-                <X size={16} />
+                Đã xử lý
               </button>
             </div>
           ))

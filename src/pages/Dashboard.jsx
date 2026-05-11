@@ -22,9 +22,16 @@ export const Dashboard = ({
   applyHistoryFilter,
   clearHistoryFilter,
 }) => {
-  const tempWarning = currentData.temperature > thresholds.temperature.max || currentData.temperature < thresholds.temperature.min;
-  const humWarning = currentData.humidity > thresholds.humidity.max || currentData.humidity < thresholds.humidity.min;
-  const lightWarning = currentData.light > thresholds.light.max || currentData.light < thresholds.light.min;
+  const getWarningType = (value, sensor) => {
+    if (value > thresholds[sensor].max) return 'Quá cao';
+    if (value < thresholds[sensor].min) return 'Quá thấp';
+    return null;
+  };
+
+  const tempWarning = getWarningType(currentData.temperature, 'temperature');
+  const humWarning = getWarningType(currentData.humidity, 'humidity');
+  const lightWarning = getWarningType(currentData.light, 'light');
+
   const isDeviceOnline = deviceStatus?.status === 'online';
   const lastSeenText = deviceStatus?.last_seen
     ? new Date(deviceStatus.last_seen).toLocaleString()
@@ -68,7 +75,8 @@ export const Dashboard = ({
           dataKey="temperature"
           data={history}
           color="#f59e0b"
-          isWarning={tempWarning}
+          isWarning={Boolean(tempWarning)}
+          statusText={tempWarning}
         />
       </div>
 
@@ -80,7 +88,8 @@ export const Dashboard = ({
           dataKey="humidity"
           data={history}
           color="#3b82f6"
-          isWarning={humWarning}
+          isWarning={Boolean(humWarning)}
+          statusText={humWarning}
         />
       </div>
 
@@ -92,7 +101,8 @@ export const Dashboard = ({
           dataKey="light"
           data={history}
           color="#6366f1"
-          isWarning={lightWarning}
+          isWarning={Boolean(lightWarning)}
+          statusText={lightWarning}
         />
       </div>
 

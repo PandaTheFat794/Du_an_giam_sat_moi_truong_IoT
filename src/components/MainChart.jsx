@@ -11,23 +11,24 @@ export const MainChart = ({ data }) => {
           <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="colorTemp" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8} />
+                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.35} />
                 <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="colorHum" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.35} />
                 <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="colorLight" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
+                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.35} />
                 <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
               </linearGradient>
             </defs>
             <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} />
             <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} />
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" />
             <Tooltip
-              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: 'var(--shadow-md)' }}
+              contentStyle={{ borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)', boxShadow: 'var(--shadow-md)' }}
+              labelStyle={{ color: 'var(--text-secondary)', marginBottom: 4 }}
               formatter={(value, name) => [
                 value + (name === 'temperature' ? ' °C' : name === 'humidity' ? ' %' : ' lux'),
                 name === 'temperature' ? 'Nhiệt độ' : name === 'humidity' ? 'Độ ẩm' : 'Ánh sáng',

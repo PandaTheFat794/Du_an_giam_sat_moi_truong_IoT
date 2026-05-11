@@ -1,6 +1,7 @@
 # ESP32 Greenhouse Firmware
 
-Firmware dùng cho mô hình giám sát nhà kính cà chua với ESP32, DHT11 và BH1750.
+Firmware dùng cho mô hình giám sát nhà kính cà chua với ESP32, DHT11 và BH1750. 
+Ở chế độ **Demo**, thiết bị được cấu hình để gửi dữ liệu mỗi **5 giây** để người xem thấy được sự thay đổi tức thì.
 
 ## Thư viện cần cài trong Arduino IDE
 

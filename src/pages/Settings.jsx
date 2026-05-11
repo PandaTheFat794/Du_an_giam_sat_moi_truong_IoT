@@ -16,10 +16,14 @@ export const Settings = ({ thresholds, setThresholds }) => {
     setSaved(false);
   };
 
-  const handleSave = () => {
-    setThresholds(localThresholds);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  const handleSave = async () => {
+    const success = await setThresholds(localThresholds);
+    if (success) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } else {
+      alert('Có lỗi xảy ra khi lưu cấu hình!');
+    }
   };
 
   const renderInputRow = (label, sensor, unit) => (
